@@ -6,6 +6,7 @@
 #include "mdadm.h"
 #include "jbod.h"
 #include "cache.h"
+#include "net.h"
 
 // Global variables
 bool MOUNTED = false;
@@ -18,7 +19,7 @@ int mdadm_mount(void)
     return -1; // Already mounted, return error code
   }
 
-  jbod_operation(JBOD_MOUNT, NULL); // Mount the file system using JBOD operation
+  jbod_client_operation(JBOD_MOUNT, NULL); // Mount the file system using JBOD operation
   MOUNTED = true;                   // Set mounted flag to true
   return 1;                         // Return success code
 }
@@ -31,7 +32,7 @@ int mdadm_unmount(void)
     return -1; // Not mounted, return error code
   }
 
-  jbod_operation(JBOD_UNMOUNT, NULL); // Unmount the file system using JBOD operation
+  jbod_client_operation(JBOD_UNMOUNT, NULL); // Unmount the file system using JBOD operation
   MOUNTED = false;                    // Set mounted flag to false
   return 1;                           // Return success code
 }
@@ -70,11 +71,11 @@ int mdadm_read(uint32_t start_addr, uint32_t read_len, uint8_t *read_buf)
       {
         // Cache miss: Read the block from the disk
         int jbod_disk = op(current_disk, 0, JBOD_SEEK_TO_DISK);
-        jbod_operation(jbod_disk, NULL);
+        jbod_client_operation(jbod_disk, NULL);
         int jbod_block = op(0, current_block, JBOD_SEEK_TO_BLOCK);
-        jbod_operation(jbod_block, NULL);
+        jbod_client_operation(jbod_block, NULL);
         int jbod_read = op(0, 0, JBOD_READ_BLOCK);
-        jbod_operation(jbod_read, temp_buf);
+        jbod_client_operation(jbod_read, temp_buf);
 
         // Insert the block into the cache
         cache_insert(current_disk, current_block, temp_buf);
@@ -123,11 +124,11 @@ int mdadm_read(uint32_t start_addr, uint32_t read_len, uint8_t *read_buf)
         {
           // Cache miss: Read the block from the disk
           int jbod_disk = op(current_disk, 0, JBOD_SEEK_TO_DISK);
-          jbod_operation(jbod_disk, NULL);
+          jbod_client_operation(jbod_disk, NULL);
           int jbod_block = op(0, current_block, JBOD_SEEK_TO_BLOCK);
-          jbod_operation(jbod_block, NULL);
+          jbod_client_operation(jbod_block, NULL);
           int jbod_read = op(0, 0, JBOD_READ_BLOCK);
-          jbod_operation(jbod_read, temp_buf);
+          jbod_client_operation(jbod_read, temp_buf);
 
           // Insert the block into the cache
           cache_insert(current_disk, current_block, temp_buf);
@@ -145,11 +146,11 @@ int mdadm_read(uint32_t start_addr, uint32_t read_len, uint8_t *read_buf)
       {
         // Seek to the current disk and block
         int jbod_disk = op(current_disk, 0, JBOD_SEEK_TO_DISK);
-        jbod_operation(jbod_disk, NULL);
+        jbod_client_operation(jbod_disk, NULL);
         int jbod_block = op(0, current_block, JBOD_SEEK_TO_BLOCK);
-        jbod_operation(jbod_block, NULL);
+        jbod_client_operation(jbod_block, NULL);
         int jbod_read = op(0, 0, JBOD_READ_BLOCK);
-        jbod_operation(jbod_read, temp_buf);
+        jbod_client_operation(jbod_read, temp_buf);
         // Calculate the number of bytes remaining to read in the data block.
         remaining_bytes = read_len - read_bytes;
 
@@ -179,11 +180,11 @@ int mdadm_read(uint32_t start_addr, uint32_t read_len, uint8_t *read_buf)
 
         // Seek to the updated current_disk on the JBOD (Just a Bunch Of Disks) system.
         int update_disk = op(current_disk, 0, JBOD_SEEK_TO_DISK);
-        jbod_operation(update_disk, NULL);
+        jbod_client_operation(update_disk, NULL);
 
         // Seek to the updated current_block on the selected disk in the JBOD system.
         int update_block = op(0, current_block, JBOD_SEEK_TO_BLOCK);
-        jbod_operation(update_block, NULL);
+        jbod_client_operation(update_block, NULL);
 
         // Reset the offset to zero for the next iteration.
         offset = 0;
@@ -224,11 +225,11 @@ int mdadm_write(uint32_t start_addr, uint32_t write_len, const uint8_t *write_bu
       {
         // Cache miss: Read the block from the disk
         int jbod_disk = op(current_disk, 0, JBOD_SEEK_TO_DISK);
-        jbod_operation(jbod_disk, NULL);
+        jbod_client_operation(jbod_disk, NULL);
         int jbod_block = op(0, current_block, JBOD_SEEK_TO_BLOCK);
-        jbod_operation(jbod_block, NULL);
+        jbod_client_operation(jbod_block, NULL);
         int jbod_read = op(0, 0, JBOD_READ_BLOCK);
-        jbod_operation(jbod_read, temp_buf);
+        jbod_client_operation(jbod_read, temp_buf);
 
         // Insert the block into the cache
         cache_insert(current_disk, current_block, temp_buf);
@@ -241,11 +242,11 @@ int mdadm_write(uint32_t start_addr, uint32_t write_len, const uint8_t *write_bu
 
       // Write the block to the disk
       int jbod_disk = op(current_disk, 0, JBOD_SEEK_TO_DISK);
-      jbod_operation(jbod_disk, NULL);
+      jbod_client_operation(jbod_disk, NULL);
       int jbod_block = op(0, current_block, JBOD_SEEK_TO_BLOCK);
-      jbod_operation(jbod_block, NULL);
+      jbod_client_operation(jbod_block, NULL);
       int jbod_write = op(0, 0, JBOD_WRITE_BLOCK);
-      jbod_operation(jbod_write, temp_buf);
+      jbod_client_operation(jbod_write, temp_buf);
 
       // Update the cache with the modified block
       cache_update(current_disk, current_block, temp_buf);
@@ -281,11 +282,11 @@ int mdadm_write(uint32_t start_addr, uint32_t write_len, const uint8_t *write_bu
 
       // Seek to the appropriate disk
       int jbod_disk = op(current_disk, 0, JBOD_SEEK_TO_DISK);
-      jbod_operation(jbod_disk, NULL);
+      jbod_client_operation(jbod_disk, NULL);
 
       // Seek to the appropriate block
       int jbod_block = op(0, current_block, JBOD_SEEK_TO_BLOCK);
-      jbod_operation(jbod_block, NULL);
+      jbod_client_operation(jbod_block, NULL);
 
       int remaining_bytes = write_len - written_bytes;
       int bytes_to_write = (offset != 0) ? (256 - offset) : ((remaining_bytes < 256) ? remaining_bytes : 256);
@@ -293,9 +294,9 @@ int mdadm_write(uint32_t start_addr, uint32_t write_len, const uint8_t *write_bu
       // Copy data to temp_buf
       memcpy(temp_buf + offset, write_buf + written_bytes, bytes_to_write);
 
-      // Write the block using jbod_operation
+      // Write the block using jbod_client_operation
       int write_the_block = op(0, 0, JBOD_WRITE_BLOCK);
-      jbod_operation(write_the_block, temp_buf);
+      jbod_client_operation(write_the_block, temp_buf);
 
       written_bytes += bytes_to_write;
     }
