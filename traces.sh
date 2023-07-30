@@ -1,5 +1,6 @@
 #!/bin/bash
 
+chmod u+x ./jbod_server
 # Create the output directory if it doesn't exist
 mkdir -p my-traces
 
@@ -25,5 +26,11 @@ for ((i=0; i<${#input_files[@]}; i++)); do
     echo "Output files $output_file and $expected_output_file are the same"
   else
     echo "Output files $output_file and $expected_output_file are different"
+  fi
+
+  if cmp -s "$output_file_1024" "traces/$expected_output_file"; then
+    echo "Output files $output_file_1024 and $expected_output_file are the same"
+  else
+    echo "Output files $output_file_1024 and $expected_output_file are different"
   fi
 done
