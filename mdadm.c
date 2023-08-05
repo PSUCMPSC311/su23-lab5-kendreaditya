@@ -37,6 +37,16 @@ int mdadm_unmount(void)
   return 1;                           // Return success code
 }
 
+int mdadm_write_permission(void)
+{
+		return 1;
+}
+
+int mdadm_revoke_write_permission(void)
+{
+		return 1;
+}
+
 // Helper function to construct the JBOD operation command
 uint32_t op(uint32_t diskID, uint32_t blockID, uint32_t command)
 {
